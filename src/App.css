@@ -1,0 +1,29 @@
+#root {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 2rem;
+  text-align: center;
+}
+
+.card {
+  width: 71px;
+  height: 94px;
+  width: 107px;
+  height: 141px;
+
+  canvas {
+    width: 100%;
+    height: 100%;
+  }
+}
+
+.form {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 0.5rem 1rem;
+  align-items: center;
+
+  label {
+    text-align: right;
+  }
+}
