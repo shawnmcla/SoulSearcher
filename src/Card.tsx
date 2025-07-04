@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 
-import { JOKERS, CONSUMABLES, EDITIONS, STICKERS, type Edition, type Sticker, type CardType, LAYERED_JOKERS } from './Data';
+import { JOKERS, CONSUMABLES, EDITIONS, STICKERS, type Edition, type Sticker, type CardType, LAYERED_CARDS } from './Data';
 
 function maskToCanvas(canvas: HTMLCanvasElement, itemName: string, type: CardType, itemModifiers: Edition[], itemStickers: Sticker[]) {
     let itemData;
@@ -51,10 +51,10 @@ function maskToCanvas(canvas: HTMLCanvasElement, itemName: string, type: CardTyp
             canvas.height
         );
 
-        if(LAYERED_JOKERS.includes(itemName)){
+        if (LAYERED_CARDS.includes(itemName)) {
             overlayCard(ctx, canvas, itemName);
         }
-        
+
         const overlayModifier = itemModifiers.find(mod => (["Foil", "Holographic", "Polychrome"]).includes(mod));
         if (overlayModifier) {
             overlayEdition(ctx, canvas, EDITIONS[overlayModifier]);
@@ -95,15 +95,37 @@ function overlaySticker(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement
 }
 
 function overlayCard(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, cardName: string) {
-    if(!LAYERED_JOKERS.includes(cardName)) {
+    if (!LAYERED_CARDS.includes(cardName)) {
         throw new Error(`overlayCard called with a non-overlayable card name: ${cardName}`);
     }
 
-    const joker = JOKERS.find(j => j.name === cardName);
-    if(joker) {
+    if (cardName === "The Soul") {
+        const overlayImg = new Image();
+        overlayImg.src = 'images/Enhancers.png';
+        overlayImg.onload = function () {
+            const overlayWidth = overlayImg.width / 7;
+            const overlayHeight = overlayImg.height / 5;
+
+            ctx.drawImage(
+                overlayImg,
+                0,
+                1 * overlayHeight,
+                overlayWidth,
+                overlayHeight,
+                0,
+                0,
+                canvas.width,
+                canvas.height
+            );
+        }
+    } else {
+        const joker = JOKERS.find(j => j.name === cardName);
+        if (!joker) {
+            throw new Error(`Could not retrieve joker information for joker: ${cardName}`);
+        }
         const overlayImg = new Image();
         overlayImg.src = 'images/Jokers.png';
-        overlayImg.onload = function() {
+        overlayImg.onload = function () {
             const overlayWidth = overlayImg.width / 10;
             const overlayHeight = overlayImg.height / 16;
 

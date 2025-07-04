@@ -21,9 +21,20 @@
   display: grid;
   grid-template-columns: max-content 1fr;
   gap: 0.5rem 1rem;
-  align-items: center;
 
   label {
     text-align: right;
+  }
+
+  .inactive {
+    opacity: 0.25;
+    pointer-events: none;
+  }
+  input, select {
+    justify-self: flex-start;
+  }
+
+  .span-row {
+    grid-column: 1 / -1;
   }
 }
