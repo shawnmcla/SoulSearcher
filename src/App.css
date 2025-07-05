@@ -38,3 +38,12 @@
     grid-column: 1 / -1;
   }
 }
+
+.seed-result {
+  display: flex;
+  gap: 1em;
+  input { 
+    flex-grow: 1;
+    font-size: 1.25em;
+  }
+}

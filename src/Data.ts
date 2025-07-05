@@ -112,7 +112,7 @@ export const PACKS = [
     "Mega Standard Pack",
     "Buffoon Pack",
     "Jumbo Buffoon Pack",
-    "Mega Buffoon Pack", 
+    "Mega Buffoon Pack",
     "Spectral Pack",
     "Jumbo Spectral Pack",
     "Mega Spectral Pack",

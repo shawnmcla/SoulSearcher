@@ -1,5 +1,15 @@
-import type { Tag } from "./Data";
-import type { SeedSearchOptions } from "./SeedSearch";
+import type { Deck, Legendary, Stake, Tag } from "./Data";
+
+export interface SeedSearchOptions {
+    soul: boolean;
+    legendary: Legendary;
+    deck: Deck;
+    stake: Stake;
+    showman: boolean;
+    version: string;
+    seedCount: number;
+    timeoutSecs: number;
+}
 
 export function getRandomSeed(length = 8) {
     const ret = [];
@@ -20,8 +30,7 @@ export function getRandomSeed(length = 8) {
 }
 
 function initUnlocks(inst: ImmolateInstance) {
-    inst.initLocks(1, false, false);
-    inst.lock("Overstock Plus");
+    inst.initLocks(1, false, false); inst.lock("Overstock Plus");
     inst.lock("Liquidation");
     inst.lock("Glow Up");
     inst.lock("Reroll Glut");
@@ -39,38 +48,63 @@ function initUnlocks(inst: ImmolateInstance) {
     inst.lock("Palette");
 }
 
-export function findSeed(opts: SeedSearchOptions): string | undefined {
-    if (!opts.soul) return getRandomSeed();
+export type SeedSearchResult = {
+    seeds: string[];
+    timedOut: boolean;
+    totalTime: number;
+}
 
-    const TIMEOUT_MS = 10_000;
+export function findSeed(opts: SeedSearchOptions, Immolate: TImmolate): SeedSearchResult {
+    if (!opts.soul) return { seeds: [getRandomSeed()], timedOut: false, totalTime: 0 };
+
+    const seeds: string[] = [];
+
+    const TIMEOUT_MS = opts.timeoutSecs * 1000;
+    if (TIMEOUT_MS <= 0) throw new Error("Timeout must be greater than 0 seconds.");
+
     const start = performance.now();
     let count = 0;
     let inst: ImmolateInstance | undefined;
-    while (performance.now() - start < TIMEOUT_MS) {
+    let foundCount = 0;
+
+    console.log(`Searching for ${opts.seedCount} seeds with legendary: ${opts.legendary}, deck: ${opts.deck}, stake: ${opts.stake}, soul: ${opts.soul}, timeout: ${TIMEOUT_MS}ms`);
+    const deletables: Deletable[] = [];
+    outer:
+    while (performance.now() - start < TIMEOUT_MS && foundCount < opts.seedCount) {
+        if(deletables.length > 0) {
+            for (const d of deletables) {
+                d.delete();
+            }
+            deletables.length = 0;
+        }
+
         if (++count % 10 === 0) console.info(`Checking seed #${count}`);
-        
-        if(inst !== undefined) inst.delete();
-        
+
         const seed = getRandomSeed();
         inst = new Immolate.Instance(seed);
+        deletables.push(inst);
 
         initUnlocks(inst);
         const ante = 1;
-        
+
         const ante1Tags: Tag[] = [inst.nextTag(ante), inst.nextTag(ante)];
         const charmTag = ante1Tags.indexOf("Charm Tag");
-        if(charmTag === -1) continue;
+        if (charmTag === -1) continue;
         const packSize = 5;
+        
         const arcana = inst.nextArcanaPack(packSize, ante);
-        for(let i = 0; i < packSize; i++) {
-            if(arcana.get(i) === "The Soul") {
+        deletables.push(arcana);
+
+        for (let i = 0; i < packSize; i++) {
+            if (arcana.get(i) === "The Soul") {
                 console.log(`The soul found at slot ${i} on seed: ${seed}`);
                 const soulJoker = inst.nextJoker("sou", ante, false);
                 console.log("Soul gives: " + soulJoker.joker);
-                if(soulJoker.joker === opts.legendary) {
+                if (soulJoker.joker === opts.legendary) {
                     console.log("MATCHES CRITERIA");
-                    inst.delete();
-                    return seed;
+                    seeds.push(seed);
+                    foundCount++;
+                    continue outer;
                 } else {
                     console.log("Wrong legendary, keep going");
                 }
@@ -78,5 +112,6 @@ export function findSeed(opts: SeedSearchOptions): string | undefined {
         }
     }
 
-    throw new Error("Seed finder timed out.");
+    
+    return { seeds, timedOut: foundCount === opts.seedCount, totalTime: performance.now() - start };
 }

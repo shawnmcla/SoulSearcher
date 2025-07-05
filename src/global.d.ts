@@ -1,5 +1,6 @@
 
-type ImmolateInstParams = {};
+type ImmolateInstParams = unknown;
+type Deletable = { delete(): void };
 type PackInfo = {
     type: Pack,
     size: number,
@@ -27,12 +28,13 @@ type PlayingCard = {
     suit: Suit,
 }
 
-type ImmolateInstance = {
+declare type ImmolateInstance = {
     params: ImmolateInstParams;
+    seed: string;
 
     initLocks(ante: number, freshProfile: boolean, freshRun: boolean): void;
     lock(itemName: string): void;
-    setStake(stakeName: Stake) : void;
+    setStake(stakeName: Stake): void;
     setDeck(deckName: Deck): void;
     initUnlocks(ante: number, freshProfile: boolean): void;
     unlock(itemName: string): void;
@@ -47,12 +49,13 @@ type ImmolateInstance = {
     nextArcanaPack(size: number, ante: number): CppVector<Consumable>;
     nextBuffoonPack(size: number, ante: number): CppVector<Joker>;
     nextStandardPack(size: number, ante: number): CppVector<PlayingCard>;
+    random(seed: str): number;
 
     delete(): void;
 }
 
-declare const Immolate: {
+declare type TImmolate = {
     Instance: new (seed: string) => ImmolateInstance;
-    InstParams: new(deck: Deck, stake: Stake, tbd0: boolean, version: string) => ImmolateInstParams;
+    InstParams: new (deck: Deck, stake: Stake, tbd0: boolean, version: string) => ImmolateInstParams;
     packInfo: (packName: string) => PackInfo;
 }
