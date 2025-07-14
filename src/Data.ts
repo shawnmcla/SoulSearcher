@@ -73,7 +73,7 @@ export type Tag = typeof TAGS[number]['name'];
 
 export const VOUCHERS = [
     { "name": "Overstock", "pos": { "x": 0, "y": 0 } }, { "name": "Clearance Sale", "pos": { "x": 3, "y": 0 } }, { "name": "Hone", "pos": { "x": 4, "y": 0 } }, { "name": "Reroll Surplus", "pos": { "x": 0, "y": 2 } }, { "name": "Crystal Ball", "pos": { "x": 2, "y": 2 } }, { "name": "Telescope", "pos": { "x": 3, "y": 2 } }, { "name": "Grabber", "pos": { "x": 5, "y": 0 } }, { "name": "Wasteful", "pos": { "x": 6, "y": 0 } }, { "name": "Tarot Merchant", "pos": { "x": 1, "y": 0 } }, { "name": "Planet Merchant", "pos": { "x": 2, "y": 0 } }, { "name": "Seed Money", "pos": { "x": 1, "y": 2 } }, { "name": "Blank", "pos": { "x": 7, "y": 0 } }, { "name": "Magic Trick", "pos": { "x": 4, "y": 2 } }, { "name": "Hieroglyph", "pos": { "x": 5, "y": 2 } }, { "name": "Director's Cut", "pos": { "x": 6, "y": 2 } }, { "name": "Paint Brush", "pos": { "x": 7, "y": 2 } }, { "name": "Overstock Plus", "pos": { "x": 0, "y": 1 } }, { "name": "Liquidation", "pos": { "x": 3, "y": 1 } }, { "name": "Glow Up", "pos": { "x": 4, "y": 1 } }, { "name": "Reroll Glut", "pos": { "x": 0, "y": 3 } }, { "name": "Omen Globe", "pos": { "x": 2, "y": 3 } }, { "name": "Observatory", "pos": { "x": 3, "y": 3 } }, { "name": "Nacho Tong", "pos": { "x": 5, "y": 1 } }, { "name": "Recyclomancy", "pos": { "x": 6, "y": 1 } }, { "name": "Tarot Tycoon", "pos": { "x": 1, "y": 1 } }, { "name": "Planet Tycoon", "pos": { "x": 2, "y": 1 } }, { "name": "Money Tree", "pos": { "x": 1, "y": 3 } }, { "name": "Antimatter", "pos": { "x": 7, "y": 1 } }, { "name": "Illusion", "pos": { "x": 4, "y": 3 } }, { "name": "Petroglyph", "pos": { "x": 5, "y": 3 } }, { "name": "Retcon", "pos": { "x": 6, "y": 3 } }, { "name": "Palette", "pos": { "x": 7, "y": 3 } }
-];
+] as const;
 
 export type Voucher = typeof VOUCHERS[number]['name'];
 
@@ -84,11 +84,12 @@ export const BOSSES = [
 export type Boss = typeof BOSSES[number]['name'];
 
 export const EDITIONS = {
+    "No Edition": -1,
     "Foil": 1,
     "Holographic": 2,
     "Polychrome": 3,
     "Negative": 4,
-} as const;
+};
 
 export type Edition = keyof typeof EDITIONS;
 
@@ -119,6 +120,44 @@ export const PACKS = [
 ] as const;
 
 export type Pack = typeof PACKS[number];
+
+export const IsArcanaPack = (pack: Pack): boolean => { 
+    return pack === "Arcana Pack" ||
+           pack === "Jumbo Arcana Pack" ||
+           pack === "Mega Arcana Pack";
+}
+
+export const IsJokerPack = (pack: Pack): boolean => {
+    return pack === "Buffoon Pack" ||
+           pack === "Jumbo Buffoon Pack" ||
+           pack === "Mega Buffoon Pack";
+}
+
+export const IsCelestialPack = (pack: Pack): boolean => {
+    return pack === "Celestial Pack" ||
+           pack === "Jumbo Celestial Pack" ||
+           pack === "Mega Celestial Pack";
+}
+
+export const IsStandardPack = (pack: Pack): boolean => {
+    return pack === "Standard Pack" ||
+           pack === "Jumbo Standard Pack" ||
+           pack === "Mega Standard Pack";
+}
+
+export const IsSpectralPack = (pack: Pack): boolean => {
+    return pack === "Spectral Pack" ||
+           pack === "Jumbo Spectral Pack" ||
+           pack === "Mega Spectral Pack";
+}
+
+export const PackSize = (pack: Pack): number => {
+    const isBig = pack.startsWith("Jumbo") || pack.startsWith("Mega");
+    if(IsJokerPack(pack) || IsSpectralPack(pack)) {
+        return isBig ? 4 : 2;
+    }
+    return isBig ? 5 : 3;
+}
 
 export const SEALS = [
     "Gold Seal",

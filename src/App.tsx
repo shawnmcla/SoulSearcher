@@ -1,47 +1,73 @@
-import { useState } from 'react'
-import './App.css'
-import Picker from './Picker';
-import { DECKS, STAKES, type Deck, type Stake } from './Data';
-import { SeedSearch, type SeedSearchOptions } from './SeedSearch';
-import { findSeed } from './SeedFinder';
+import './App.css';
+import { type Deck, type Stake } from './Data';
+import { SeedSearch } from './SeedSearch/SeedSearch';
+import { LegendaryCriteria, type SeedSearchOptions, type SeedSearchResult } from './SeedFinder';
+import SeedFinderWorker from "./SeedFinderWorker?worker";
 
+
+function processResult(res: SeedSearchResult) {
+  console.log("RESULT\n", res, "\nSEEDS FOUND\n", res.seeds.join("\n"));
+}
+
+function doTest() {
+  const deck: Deck = "Red Deck";
+  const stake: Stake = "White Stake";
+  const timeoutSecs = 10;
+  const seedCount = 1;
+
+  const opts: SeedSearchOptions = {
+    deck, stake,
+    timeoutSecs, seedCount, version: "10106",
+    showman: false,
+    legendaryCriteria: new LegendaryCriteria(
+      "Perkeo", "Round1Skip", undefined
+    )
+  }
+
+  const cores = navigator.hardwareConcurrency;
+  const aggregatedResults: SeedSearchResult = {
+    seeds: [],
+    timedOut: false,
+    totalTime: 0,
+  };
+
+  let done = 0;
+  function workerDone(i: number, data: SeedSearchResult) {
+    done++;
+    aggregatedResults.seeds.push(...data.seeds);
+    if (data.timedOut) aggregatedResults.timedOut = true;
+    aggregatedResults.totalTime = Math.max(aggregatedResults.totalTime, data.totalTime);
+    console.debug(`Worker id ${i} complete`);
+    if (done === cores) {
+      console.debug("All done!");
+      processResult(aggregatedResults);
+    }
+
+  }
+  for (let i = 0; i < cores; i++) {
+    const worker = new SeedFinderWorker();
+
+    worker.onmessage = (e) => {
+      console.log("Worker message received:", e);
+      workerDone(i, e.data);
+      worker.terminate();
+    }
+
+    worker.postMessage(opts);
+  }
+}
 function App() {
-  const [seed, setSeed] = useState("HFWMNI21");
-  const [maxAnte, setMaxAnte] = useState(8);
-  const [deck, setDeck] = useState<Deck>(DECKS[0]);
-  const [stake, setStake] = useState<Stake>(STAKES[0]);
-
-  const [searchOpts, setSearchopts] = useState<SeedSearchOptions | null>(null);
-
+  const test = true;
   return (
     <>
       <h1>SoulSearcher</h1>
-      <SeedSearch onSubmit={opts => setSearchopts(opts)} />
-
-      {/* <div className='form'>
-        <label htmlFor="seed">Seed</label>
-        <input
-          type="text"
-          name="seed"
-          id="seed"
-          value={seed}
-          pattern="^[A-Za-z0-9]{0-8}$"
-          title="Seed must be 8 characters long, using uppercase letters and numbers only."
-          maxLength={8}
-          autoComplete="off"
-          onChange={e => setSeed(e.target.value.toUpperCase())}
-        />
-
-        <label htmlFor="maxAnte">Max Ante</label>
-        <input type="number" min="1" max="39" id="maxAnte" value={maxAnte} onChange={e => setMaxAnte(Number(e.target.value))} />
-
-        <label htmlFor="Deck">Deck</label>
-        <Picker options={[...DECKS]} value={deck} onChange={e => setDeck(e.target.value as Deck)} />
-
-        <label htmlFor="Stake">Stake</label>
-        <Picker options={[...STAKES]} value={stake} onChange={e => setStake(e.target.value as Stake)} />
-
-      </div> */}
+      {(
+        test && <div>
+          <h2>Test Mode</h2>
+          <button onClick={() => doTest()}>Run Test</button>
+        </div>
+      ) || <SeedSearch />
+      }
     </>
   )
 }

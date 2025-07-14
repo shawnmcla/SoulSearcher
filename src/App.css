@@ -18,31 +18,60 @@
 }
 
 .form {
-  display: grid;
-  grid-template-columns: max-content 1fr;
-  gap: 0.5rem 1rem;
+  display: flex;  
+  flex-direction: column;
+  gap: 0.5em;
 
-  label {
-    text-align: right;
+  input[type="checkbox"] {
+    margin: 0;
+  }
+  
+  .row {
+    display: flex;
+    justify-content: center;
+    gap: 1.75em;
+
+    label {
+      display: inline-block;
+      text-align: right;
+      width: 50%;
+    }
+
+    label+ :not(label) {
+      width: 50%;
+    }
+
+    label+div {
+      display: flex;
+      justify-content: flex-start;
+    }
   }
 
-  .inactive {
+  &.inactive>* {
     opacity: 0.25;
     pointer-events: none;
   }
-  input, select {
-    justify-self: flex-start;
-  }
+}
 
-  .span-row {
-    grid-column: 1 / -1;
-  }
+.reveal-container {
+  overflow: hidden;
+  max-height: 0;
+  opacity: 0;
+  transition:
+    max-height 0.5s ease,
+    opacity 0.25s ease;
+}
+
+.reveal-container.active {
+  max-height: 10000px;
+  opacity: 1;
 }
 
 .seed-result {
   display: flex;
   gap: 1em;
-  input { 
+
+  input {
     flex-grow: 1;
     font-size: 1.25em;
   }
