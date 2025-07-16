@@ -1,11 +1,12 @@
 import { useState } from "react";
 import Picker from "../Picker";
 import { DECKS, EDITIONS, LEGENDARY_JOKERS, STAKES, type Deck, type Edition, type Legendary, type Stake, type Voucher } from "../Data";
-import { LegendaryCriteria, LegendarySources, type LegendarySource, type SeedSearchOptions, type SeedSearchResult } from "../SeedFinder";
+import { LegendaryCriteria, LegendarySources, type LegendarySource, type SeedSearchOptions, type SeedSearchResult } from "../SeedFinder/SeedFinder";
 
-import SeedFinderWorker from "../SeedFinderWorker?worker";
-import { RevealContainer } from "../Components/RevealContainer";
-import Modal from "../Components/Modal";
+import SeedFinderWorker from "../SeedFinder/FinderWorker?worker";
+import { RevealContainer } from "./RevealContainer";
+import Modal from "./Modal";
+import { SearchDispatcher } from "../SeedFinder/Dispatcher";
 
 const Decks = [...DECKS];
 const Editions = Object.keys(EDITIONS) as Edition[];
@@ -92,7 +93,7 @@ function LegendarySearch({ onChange }: { onChange: (opts: LegendarySearchOpts) =
         <div className="row">
             <label htmlFor="legendarySrc">Legendary Source</label>
             <Picker onChange={e => setSearchOpts({ ...opts, source: e.target.value as LegendarySource })}
-                options={LegendarySources}
+                options={[...LegendarySources]}
                 value={opts.source}
                 displayFn={legendarySourceStr}
             />
@@ -168,54 +169,21 @@ export function SeedSearch() {
     const [parallelism, setParallelism] = useState<boolean>(true);
     const [timeoutSecs, setTimeoutSecs] = useState<number>(10);
 
-    function processResult(result: SeedSearchResult) {
-        setStats(`Found ${result.seeds.length} seeds in ${Math.floor(result.totalTime)}ms${result.timedOut ? " (Timed out)" : ""}`);
-        setSeeds(result.seeds);
-        return result;
-    }
-
-    function search() {
-        const opts: SeedSearchOptions = {
-            deck, stake,
-            timeoutSecs, seedCount, version: "10106",
+    async function beginSearch() {
+        await SearchDispatcher.findSeeds({
+            deck,
+            stake,
             showman: false,
+            timeoutSecs: 30,
+            version: "10106",
             legendaryCriteria: new LegendaryCriteria(
-                legendaryOpts.legendary, legendaryOpts.source, legendaryOpts.findEdition ? legendaryOpts.edition : undefined
+                legendaryOpts.legendary,
+                legendaryOpts.source,
+                legendaryOpts.edition
             )
-        }
-
-        const cores = navigator.hardwareConcurrency;
-        const aggregatedResults: SeedSearchResult = {
-            seeds: [],
-            timedOut: false,
-            totalTime: 0,
-        };
-
-        let done = 0;
-        function workerDone(i: number, data: SeedSearchResult) {
-            done++;
-            aggregatedResults.seeds.push(...data.seeds);
-            if (data.timedOut) aggregatedResults.timedOut = true;
-            aggregatedResults.totalTime = Math.max(aggregatedResults.totalTime, data.totalTime);
-            console.debug(`Worker id ${i} complete`);
-            if (done === cores) {
-                console.debug("All done!");
-                processResult(aggregatedResults);
-            }
-
-        }
-        for (let i = 0; i < cores; i++) {
-            const worker = new SeedFinderWorker();
-
-            worker.onmessage = (e) => {
-                console.log("Worker message received:", e);
-                workerDone(i, e.data);
-                worker.terminate();
-            }
-
-            worker.postMessage(opts);
-        }
-
+        }, seedCount,
+            s => setSeeds(prevSeeds => [...prevSeeds, s])
+        );
     }
 
     return <div>
@@ -266,7 +234,7 @@ export function SeedSearch() {
             </div>
 
             <div className="row">
-                <button onClick={search}>Find Seeds!</button>
+                <button onClick={beginSearch}>Find Seeds!</button>
             </div>
 
             <div className="results">
